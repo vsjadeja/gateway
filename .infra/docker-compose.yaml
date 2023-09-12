@@ -1,0 +1,23 @@
+version: '3.1'
+
+services:
+  api:
+    build: ../gateway
+    ports:
+      - "8081:8081"
+    networks:
+      - internal-route
+    depends_on:
+      - book
+      - order
+  book:
+    build: ../book
+    networks:
+      - internal-route
+  order:
+    build: ../order
+    networks:
+      - internal-route
+
+networks:
+  internal-route:
