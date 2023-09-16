@@ -8,16 +8,46 @@ services:
     networks:
       - internal-route
     depends_on:
-      - book
+      - product
       - order
-  book:
-    build: ../book
+  product:
+    build: ../svcProduct
+    depends_on:
+      - productDB
     networks:
       - internal-route
+      - netProductBackend
   order:
     build: ../order
     networks:
       - internal-route
 
+  productDB:
+    image: mariadb:11
+    restart: always
+    volumes:
+      - volProductDB:/var/lib/mysql
+    networks:
+      - netProductBackend
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: productDB
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 1111:80
+    depends_on:
+      - productDB
+    networks:
+      - netProductBackend
+    environment:
+      - PMA_ARBITRARY=1
+
+volumes:
+  volProductDB:
+
 networks:
   internal-route:
+  netProductBackend:

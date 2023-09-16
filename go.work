@@ -1,5 +1,5 @@
 go 1.21
 
-use ./book
+use ./svcProduct
 use ./gateway
 use ./order
