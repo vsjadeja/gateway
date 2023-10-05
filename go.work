@@ -3,3 +3,4 @@ go 1.21
 use ./svcProduct
 use ./gateway
 use ./order
+use ./svcUser

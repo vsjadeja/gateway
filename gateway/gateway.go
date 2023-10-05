@@ -92,7 +92,6 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(
 		LoggerMiddleware,
-		LimiterMiddleware,
 		AuthMiddleware,
 	)
 	router.PathPrefix("/").Handler(http.HandlerFunc(handleRequest))

@@ -1,26 +1,89 @@
-version: '3.1'
+version: '3.9'
+
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
 
 services:
   api:
     build: ../gateway
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    restart: unless-stopped
+    logging: *logging
     ports:
       - "8081:8081"
     networks:
       - internal-route
     depends_on:
-      - product
-      - order
+      product:
+        condition: service_started
+      order:
+        condition: service_started
+
   product:
     build: ../svcProduct
     depends_on:
-      - productDB
+      productDB:
+        condition: service_started
+    environment:
+      - DB_HOST=${PRODUCT_DB_HOST}
+      - DB_PORT=${PRODUCT_DB_PORT}
+      - DB_USER=${PRODUCT_DB_USER}
+      - DB_PASSWORD=${PRODUCT_DB_PASSWORD}
+      - DB_DATABASE=${PRODUCT_DB_DATABASE}
     networks:
       - internal-route
       - netProductBackend
+    logging: *logging
+
   order:
     build: ../order
+    deploy:
+      resources:
+        limits:
+          memory: 20M
     networks:
       - internal-route
+    logging: *logging
+
+  user:
+    build: ../svcUser
+    deploy:
+      resources:
+        limits:
+          memory: 20M
+    depends_on:
+      userDB:
+        condition: service_started
+    environment:
+      - DB_HOST=${USER_DB_HOST}
+      - DB_PORT=${USER_DB_PORT}
+      - DB_USER=${USER_DB_USER}
+      - DB_PASSWORD=${USER_DB_PASSWORD}
+      - DB_DATABASE=${USER_DB_DATABASE}
+    networks:
+      - internal-route
+      - netUserBackend
+    logging: *logging
+
+  userDB:
+    image: mariadb:11
+    restart: always
+    volumes:
+      - volUserDB:/var/lib/mysql
+    networks:
+      - netUserBackend
+    logging: *logging
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${USER_DB_DATABASE}
+      MARIADB_USER: ${USER_DB_USER}
+      MARIADB_PASSWORD: ${USER_DB_PASSWORD}
 
   productDB:
     image: mariadb:11
@@ -29,9 +92,93 @@ services:
       - volProductDB:/var/lib/mysql
     networks:
       - netProductBackend
+    logging: *logging
     environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: productDB
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${PRODUCT_DB_DATABASE}
+      MARIADB_USER: ${PRODUCT_DB_USER}
+      MARIADB_PASSWORD: ${PRODUCT_DB_PASSWORD}
+
+  # # Jaeger
+  # jaeger:
+  #   image: jaegertracing/all-in-one:1.48.0
+  #   container_name: jaeger
+  #   command:
+  #     - "--memory.max-traces"
+  #     - "10000"
+  #     - "--query.base-path"
+  #     - "/jaeger/ui"
+  #     - "--prometheus.server-url"
+  #     - "http://prometheus:9090"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 300M
+  #   restart: unless-stopped
+  #   ports:
+  #     - "16686"         # Jaeger UI
+  #     - "4317"          # OTLP gRPC default port
+  #   environment:
+  #     - COLLECTOR_OTLP_ENABLED=true
+  #     - METRICS_STORAGE_TYPE=prometheus
+  #   networks:
+  #     - netTracing
+  #   depends_on:
+  #     - prometheus
+
+  # # Grafana
+  # grafana:
+  #   image: grafana/grafana-enterprise
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 100M
+  #   volumes:
+  #     - ./grafana.ini:/etc/grafana/grafana.ini
+  #     - volGrafana:/var/lib/grafana
+  #   ports:
+  #     - 3000:3000
+  #   networks:
+  #     - netTracing
+
+  # # OpenTelemetry Collector
+  # otelcol:
+  #   image: otel/opentelemetry-collector-contrib:0.84.0
+  #   container_name: otel-col
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 125M
+  #   restart: unless-stopped
+  #   command: [ "--config=/etc/otelcol-config.yml", "--config=/etc/otelcol-observability.yml", "--config=/etc/otelcol-config-extras.yml" ]
+  #   volumes:
+  #     - ./otelcol-config.yml:/etc/otelcol-config.yml
+  #     - ./otelcol-observability.yml:/etc/otelcol-observability.yml
+  #     - ./otelcol-config-extras.yml:/etc/otelcol-config-extras.yml
+  #   ports:
+  #     - "4317"          # OTLP over gRPC receiver
+  #     - "4318:4318"     # OTLP over HTTP receiver
+  #     - "9464"          # Prometheus exporter
+  #     - "8888"          # metrics endpoint
+  #   depends_on:
+  #     - jaeger
+  #   networks:
+  #     - netTracing
+
+  # # Prometheus
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./prometheus-config.yaml:/etc/prometheus/prometheus.yml
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 300M
+  #   logging: *logging
+  #   ports:
+  #     - "9090"
+  #   networks:
+  #     - netTracing
 
   phpmyadmin:
     image: phpmyadmin
@@ -39,15 +186,27 @@ services:
     ports:
       - 1111:80
     depends_on:
-      - productDB
+      productDB:
+        condition: service_started
+      userDB:
+        condition: service_started
     networks:
       - netProductBackend
+      - netUserBackend
+    logging: *logging
     environment:
       - PMA_ARBITRARY=1
+      - PMA_HOSTS=userDB,productDB
+      - PMA_USER=root
+      - PMA_PASSWORD=${DB_ROOT_PASSWORD}
 
 volumes:
-  volProductDB:
+  volProductDB: {}
+  volUserDB: {}
+  volGrafana: {}
 
 networks:
   internal-route:
   netProductBackend:
+  netUserBackend:
+  netTracing:

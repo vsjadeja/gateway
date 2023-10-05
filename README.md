@@ -30,11 +30,13 @@ API gateway for microservices usign go.
 ## Setup
 
 To build and run source code, run below command
+
 ```
-docker-compose up -d
+docker compose up -d
 ```
 
 To stop and clean docker resources, run below command
+
 ```
-docker-compose down --rmi all
+docker compose down --rmi local
 ```

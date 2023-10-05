@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"product/application"
+	"user/application"
 
 	"github.com/gorilla/mux"
 )
 
 const servicePort string = `:8080`
-const serviceName string = `Product API`
+const serviceName string = `User API`
 
 func main() {
 	r := mux.NewRouter()
@@ -19,8 +19,8 @@ func main() {
 	}).Methods("GET")
 
 	//api routs
-	r.HandleFunc("/{id}", getById).Methods("GET")
-	r.HandleFunc("/add", createProduct).Methods("POST")
+	r.HandleFunc("/login", Login).Methods("POST")
+	r.HandleFunc("/register", Register).Methods("POST")
 
 	app := application.New(serviceName, servicePort, r)
 	app.Initialize()
