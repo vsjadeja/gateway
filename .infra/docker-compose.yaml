@@ -17,12 +17,15 @@ services:
     logging: *logging
     ports:
       - "8081:8081"
+      - "8082:8082"
     networks:
       - internal-route
     depends_on:
       product:
         condition: service_started
       order:
+        condition: service_started
+      user:
         condition: service_started
 
   product:
@@ -98,87 +101,6 @@ services:
       MARIADB_DATABASE: ${PRODUCT_DB_DATABASE}
       MARIADB_USER: ${PRODUCT_DB_USER}
       MARIADB_PASSWORD: ${PRODUCT_DB_PASSWORD}
-
-  # # Jaeger
-  # jaeger:
-  #   image: jaegertracing/all-in-one:1.48.0
-  #   container_name: jaeger
-  #   command:
-  #     - "--memory.max-traces"
-  #     - "10000"
-  #     - "--query.base-path"
-  #     - "/jaeger/ui"
-  #     - "--prometheus.server-url"
-  #     - "http://prometheus:9090"
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 300M
-  #   restart: unless-stopped
-  #   ports:
-  #     - "16686"         # Jaeger UI
-  #     - "4317"          # OTLP gRPC default port
-  #   environment:
-  #     - COLLECTOR_OTLP_ENABLED=true
-  #     - METRICS_STORAGE_TYPE=prometheus
-  #   networks:
-  #     - netTracing
-  #   depends_on:
-  #     - prometheus
-
-  # # Grafana
-  # grafana:
-  #   image: grafana/grafana-enterprise
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 100M
-  #   volumes:
-  #     - ./grafana.ini:/etc/grafana/grafana.ini
-  #     - volGrafana:/var/lib/grafana
-  #   ports:
-  #     - 3000:3000
-  #   networks:
-  #     - netTracing
-
-  # # OpenTelemetry Collector
-  # otelcol:
-  #   image: otel/opentelemetry-collector-contrib:0.84.0
-  #   container_name: otel-col
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 125M
-  #   restart: unless-stopped
-  #   command: [ "--config=/etc/otelcol-config.yml", "--config=/etc/otelcol-observability.yml", "--config=/etc/otelcol-config-extras.yml" ]
-  #   volumes:
-  #     - ./otelcol-config.yml:/etc/otelcol-config.yml
-  #     - ./otelcol-observability.yml:/etc/otelcol-observability.yml
-  #     - ./otelcol-config-extras.yml:/etc/otelcol-config-extras.yml
-  #   ports:
-  #     - "4317"          # OTLP over gRPC receiver
-  #     - "4318:4318"     # OTLP over HTTP receiver
-  #     - "9464"          # Prometheus exporter
-  #     - "8888"          # metrics endpoint
-  #   depends_on:
-  #     - jaeger
-  #   networks:
-  #     - netTracing
-
-  # # Prometheus
-  # prometheus:
-  #   image: prom/prometheus
-  #   volumes:
-  #     - ./prometheus-config.yaml:/etc/prometheus/prometheus.yml
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 300M
-  #   logging: *logging
-  #   ports:
-  #     - "9090"
-  #   networks:
-  #     - netTracing
 
   phpmyadmin:
     image: phpmyadmin

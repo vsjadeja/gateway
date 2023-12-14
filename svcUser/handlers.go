@@ -31,6 +31,12 @@ func GenerateJWT() (string, error) {
 	return tokenString, nil
 }
 
+type LoginResponse struct {
+	Response string `json:"response,omitempty"`
+	Message  string `json:"message,omitempty"`
+	Token    string `json:"token,omitempty"`
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
 	var user entities.User
 	var dbUser entities.User
@@ -38,13 +44,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&user)
 
 	if err := user.Validate(); err != nil {
-		sendWrappedResponse(w, http.StatusUnprocessableEntity, err.Error())
+		resp := LoginResponse{Response: err.Error()}
+		sendWrappedResponse(w, http.StatusUnprocessableEntity, resp)
 		return
 	}
 
 	database.Instance.Where("username = ?", user.Username).First(&dbUser)
 	if dbUser.Username == "" {
-		sendWrappedResponse(w, http.StatusUnprocessableEntity, `{"response":"Wrong Username or Password!"}`)
+		resp := LoginResponse{Response: "Wrong Username or Password!"}
+		sendWrappedResponse(w, http.StatusUnprocessableEntity, resp)
 		return
 	}
 
@@ -53,17 +61,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	passErr := bcrypt.CompareHashAndPassword(dbPass, userPass)
 	if passErr != nil {
-		sendWrappedResponse(w, http.StatusOK, `{"response":"Wrong Username or Password!"}`)
+		resp := LoginResponse{Response: "Wrong Username or Password!"}
+		sendWrappedResponse(w, http.StatusForbidden, resp)
 		return
 	}
 
 	jwtToken, err := GenerateJWT()
 	if err != nil {
-		sendWrappedResponse(w, http.StatusInternalServerError, `{"message":"`+err.Error()+`"}`)
+		resp := LoginResponse{Message: err.Error()}
+		sendWrappedResponse(w, http.StatusInternalServerError, resp)
 		return
 	}
 
-	sendWrappedResponse(w, http.StatusOK, `{"token":"`+jwtToken+`"}`)
+	resp := LoginResponse{Token: jwtToken}
+	sendWrappedResponse(w, http.StatusOK, resp)
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {

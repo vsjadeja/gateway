@@ -71,3 +71,35 @@ func LimiterMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func EnableCorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var origin = ""
+		for n, h := range r.Header {
+			// get the origin from the request
+			if strings.Contains(n, "Origin") {
+				for _, h := range h {
+					origin = h
+				}
+			}
+		}
+
+		// always allow access origin
+		w.Header().Add("Access-Control-Allow-Origin", origin)
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		w.Header().Add("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
+
+		if r.Method == "OPTIONS" {
+			for n, h := range r.Header {
+				if strings.Contains(n, "Access-Control-Request") {
+					for _, h := range h {
+						k := strings.Replace(n, "Request", "Allow", 1)
+						w.Header().Add(k, h)
+					}
+				}
+			}
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

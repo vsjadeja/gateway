@@ -8,17 +8,20 @@ RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /main
 
-# # Run the tests in the container
-# FROM builder AS run-test-stage
-# RUN go test -v ./...
-
 # Deploy the application binary into a lean image
-FROM alpine:3.14
+FROM nginx
 
-WORKDIR /
+RUN rm -rf /usr/share/nginx/html/*
 
 COPY --from=builder /main /main
+COPY --from=builder /app/docs /usr/share/nginx/html
+COPY --from=builder /app/default.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 8081
+EXPOSE 8081 8082
 
-ENTRYPOINT ["/main"]
+RUN echo "#!/bin/sh" >> /bin/start.sh \
+ && echo "service nginx restart &" >> /bin/start.sh \
+ && echo "/main" >> /bin/start.sh \
+ && chmod 755 /bin/start.sh
+
+ENTRYPOINT ["/bin/start.sh"]
