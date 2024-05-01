@@ -32,7 +32,7 @@ services:
     build: ../svcProduct
     depends_on:
       productDB:
-        condition: service_started
+        condition: service_healthy
     environment:
       - DB_HOST=${PRODUCT_DB_HOST}
       - DB_PORT=${PRODUCT_DB_PORT}
@@ -62,7 +62,7 @@ services:
           memory: 20M
     depends_on:
       userDB:
-        condition: service_started
+        condition: service_healthy
     environment:
       - DB_HOST=${USER_DB_HOST}
       - DB_PORT=${USER_DB_PORT}
@@ -77,6 +77,18 @@ services:
   userDB:
     image: mariadb:11
     restart: always
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+        ]
+      timeout: 30s
     volumes:
       - volUserDB:/var/lib/mysql
     networks:
@@ -91,6 +103,18 @@ services:
   productDB:
     image: mariadb:11
     restart: always
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+        ]
+      timeout: 30s
     volumes:
       - volProductDB:/var/lib/mysql
     networks:
