@@ -1,4 +1,4 @@
-FROM golang:1.19 AS builder
+FROM golang:1.20 AS builder
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ COPY . ./
 
 RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /order
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /svcOrder
 
 # # Run the tests in the container
 # FROM builder AS run-test-stage
@@ -17,8 +17,8 @@ FROM alpine:3.14
 
 WORKDIR /
 
-COPY --from=builder /order /order
+COPY --from=builder /svcOrder /svcOrder
 
 EXPOSE 8080
 
-ENTRYPOINT ["/order"]
+ENTRYPOINT ["/svcOrder"]
