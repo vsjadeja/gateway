@@ -1,6 +1,6 @@
 module user
 
-go 1.20
+go 1.21
 
 require (
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
@@ -11,6 +11,8 @@ require (
 	gorm.io/gorm v1.25.4
 )
 
+require github.com/stretchr/testify v1.9.0 // indirect
+
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
@@ -20,5 +22,5 @@ require (
 	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.14.0
+	golang.org/x/crypto v0.22.0
 )

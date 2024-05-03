@@ -6,7 +6,7 @@ COPY . ./
 
 RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /main
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /order
 
 # # Run the tests in the container
 # FROM builder AS run-test-stage
@@ -17,8 +17,8 @@ FROM alpine:3.14
 
 WORKDIR /
 
-COPY --from=builder /main /main
+COPY --from=builder /order /order
 
 EXPOSE 8080
 
-ENTRYPOINT ["/main"]
+ENTRYPOINT ["/order"]

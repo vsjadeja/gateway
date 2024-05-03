@@ -26,9 +26,31 @@ paths:
       responses:
         200:
           description: OK
+  /user/register:
+    post:
+      summary: Add new user to system.
+      parameters:
+        - in: body
+          name: register
+          schema:
+            $ref: '#/definitions/Register'
+      responses:
+        201:
+          description: User created.
+        422:
+          description: Unprocessable data.
 
 definitions:
   User:
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+    required:  
+      - username
+      - password
+  Register:
     properties:
       username:
         type: string

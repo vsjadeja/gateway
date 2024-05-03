@@ -8,7 +8,7 @@ x-default-logging: &logging
 
 services:
   api:
-    build: ../gateway
+    build: ../svcApi
     deploy:
       resources:
         limits:
@@ -45,7 +45,7 @@ services:
     logging: *logging
 
   order:
-    build: ../order
+    build: ../svcOrder
     deploy:
       resources:
         limits:
