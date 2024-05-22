@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -93,8 +94,11 @@ func main() {
 	router.Use(
 		LoggerMiddleware,
 		EnableCorsMiddleware,
+		PrometheusMiddleware,
 		AuthMiddleware,
 	)
+
+	router.Path("/metrics").Handler(promhttp.Handler())
 	router.PathPrefix("/").Handler(http.HandlerFunc(handleRequest))
 
 	// Create a new HTTP server with the handleRequest function as the handler

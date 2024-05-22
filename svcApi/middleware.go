@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 )
 
@@ -17,6 +19,7 @@ var skippedFromAuthRoutes = map[string]string{
 	`/user/login`:    `login`,
 	`/user/register`: `register`,
 	`/user/forgot`:   `forgot`,
+	`/metrics`:       `metrics`,
 }
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -101,5 +104,18 @@ func EnableCorsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+var httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "gateway_http_duration_seconds",
+	Help: "Duration of HTTP requests.",
+}, []string{"path"})
+
+func PrometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(r.URL.Path))
+		next.ServeHTTP(w, r)
+		timer.ObserveDuration()
 	})
 }

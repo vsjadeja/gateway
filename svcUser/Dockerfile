@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /svcUser
 # RUN go test -v ./...
 
 # Deploy the application binary into a lean image
-FROM alpine:3.14
+FROM alpine:latest
 
 WORKDIR /
 
